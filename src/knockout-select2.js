@@ -28,63 +28,56 @@
         }
     }
 
-    function init(element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
-        var bindingValue = ko.unwrap(valueAccessor());
-        var allBindings = allBindingsAccessor();
-        var ignoreChange = false;
-        var dataChangeHandler = null;
-        var subscription = null;
-
-        $(element).on('select2:selecting select2:unselecting', function() {
-            ignoreChange = true;
-        });
-        $(element).on('select2:select select2:unselect', function() {
-            ignoreChange = false;
-        });
-
-        if (ko.isObservable(allBindings.value)) {
-            subscription = allBindings.value.subscribe(function(value) {
-                if (ignoreChange) return;
-                triggerChangeQuietly(element, this._target || this.target);
-            });
-        } else if (ko.isObservable(allBindings.selectedOptions)) {
-            subscription = allBindings.selectedOptions.subscribe(function(value) {
-                if (ignoreChange) return;
-                triggerChangeQuietly(element, this._target || this.target);
-            });
-        }
-
-        // Provide a hook for binding to the select2 "data" property; this property is read-only in select2 so not subscribing.
-        if (ko.isWriteableObservable(allBindings[dataBindingName])) {
-            dataChangeHandler = function() {
-                if (!$(element).data('select2')) return;
-                allBindings[dataBindingName]($(element).select2('data'));
-            };
-            $(element).on('change', dataChangeHandler);
-        }
-
-        // Apply select2
-        $(element).select2(bindingValue);
-
-        // Destroy select2 on element disposal
-        ko.utils.domNodeDisposal.addDisposeCallback(element, function() {
-            $(element).select2('destroy');
-            if (dataChangeHandler !== null) {
-                $(element).off('change', dataChangeHandler);
-            }
-            if (subscription !== null) {
-                subscription.dispose();
-            }
-        });
-    }
-
     return ko.bindingHandlers[bindingName] = {
-        init: function() {
-            // Delay to allow other binding handlers to run, as this binding handler depends on options bindings
-            var args = arguments;
-            setTimeout(function() {                
-                init.apply(null, args);
-            }, 0);
+        after: ['options', 'selectedOptions'],
+        init: function (element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
+            var bindingValue = ko.unwrap(valueAccessor());
+            var allBindings = allBindingsAccessor();
+            var ignoreChange = false;
+            var dataChangeHandler = null;
+            var subscription = null;
+
+            $(element).on('select2:selecting select2:unselecting', function() {
+                ignoreChange = true;
+            });
+            $(element).on('select2:select select2:unselect', function() {
+                ignoreChange = false;
+            });
+
+            if (ko.isObservable(allBindings.value)) {
+                subscription = allBindings.value.subscribe(function(value) {
+                    if (ignoreChange) return;
+                    triggerChangeQuietly(element, this._target || this.target);
+                });
+            } else if (ko.isObservable(allBindings.selectedOptions)) {
+                subscription = allBindings.selectedOptions.subscribe(function(value) {
+                    if (ignoreChange) return;
+                    triggerChangeQuietly(element, this._target || this.target);
+                });
+            }
+
+            // Provide a hook for binding to the select2 "data" property; this property is read-only in select2 so not subscribing.
+            if (ko.isWriteableObservable(allBindings[dataBindingName])) {
+                dataChangeHandler = function() {
+                    if (!$(element).data('select2')) return;
+                    allBindings[dataBindingName]($(element).select2('data'));
+                };
+                $(element).on('change', dataChangeHandler);
+            }
+
+            // Apply select2
+            $(element).select2(bindingValue);
+
+            // Destroy select2 on element disposal
+            ko.utils.domNodeDisposal.addDisposeCallback(element, function() {
+                $(element).select2('destroy');
+                if (dataChangeHandler !== null) {
+                    $(element).off('change', dataChangeHandler);
+                }
+                if (subscription !== null) {
+                    subscription.dispose();
+                }
+            });
         }
     };
 });
