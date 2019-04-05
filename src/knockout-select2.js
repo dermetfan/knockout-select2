@@ -47,12 +47,12 @@
             if (ko.isObservable(allBindings.value)) {
                 subscription = allBindings.value.subscribe(function(value) {
                     if (ignoreChange) return;
-                    triggerChangeQuietly(element, this._target || this.target);
+                    triggerChangeQuietly(element, allBindings.value);
                 });
             } else if (ko.isObservable(allBindings.selectedOptions)) {
                 subscription = allBindings.selectedOptions.subscribe(function(value) {
                     if (ignoreChange) return;
-                    triggerChangeQuietly(element, this._target || this.target);
+                    triggerChangeQuietly(element, allBindings.selectedOptions);
                 });
             }
 
